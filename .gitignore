@@ -4,3 +4,4 @@ Data/SPOTIFY_REVIEWS.csv
 playground/cache
 model.safetensors
 playground/old_cache
+/__pycache__
