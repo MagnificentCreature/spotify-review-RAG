@@ -1,0 +1,16 @@
+FROM nvcr.io/nvidia/rapidsai/base:25.02-cuda12.0-py3.12
+
+# Install Python and other dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Optional: Create a symlink for python (if needed)
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# Copy your requirements.txt file (or adjust as needed)
+COPY requirements.txt /tmp/requirements.txt
+RUN pip3 install --upgrade pip && pip3 install -r /tmp/requirements.txt
+
+# This Dockerfile can include any additional setup you need.
