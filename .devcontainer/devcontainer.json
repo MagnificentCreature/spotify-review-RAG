@@ -7,8 +7,11 @@
 	"build": {
         // Path is relative to the devcontainer.json file.
         "dockerfile": "Dockerfile",
-		"context": ".."
+		"context": "."
     },
+	"containerEnv": { 
+		"PATH": "/root/.local/bin:${PATH}" 
+	},
 	"runArgs": [
 		"--gpus",
 		"all",
@@ -35,7 +38,7 @@
 			"ms-python.vscode-pylance",
 			"ms-toolsai.jupyter",
 			"mechatroner.rainbow-csv",
-			"michelemelluso.gitignore"
+			"michelemelluso.gitignore" 
 		]
 		}
 	  }

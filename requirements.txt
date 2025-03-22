@@ -2,8 +2,9 @@ openai
 streamlit
 llama-index
 ipykernel
+ipywidgets
 tiktoken
-faiss-cpu==1.7.4
+faiss-cpu
 langchain
 langchain-community
 langchain-huggingface
@@ -16,4 +17,7 @@ google-generativeai
 safetensors
 python-Levenshtein
 symspellpy
-cupy-cuda12x
+nltk
+bitsandbytes
+accelerate
+
