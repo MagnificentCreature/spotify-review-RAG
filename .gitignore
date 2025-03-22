@@ -5,3 +5,4 @@ playground/cache
 model.safetensors
 playground/old_cache
 /__pycache__
+open_ai_embeddings_cache.pkl

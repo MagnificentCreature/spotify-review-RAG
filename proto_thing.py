@@ -1,71 +1,73 @@
+import os
+import pickle
+
 import openai
-import pandas as pd
 import streamlit as st
-from llama_index import (Document, ServiceContext, SimpleDirectoryReader,
-                         VectorStoreIndex)
-from llama_index.llms import OpenAI
+from llama_index.core import Document, Settings, VectorStoreIndex
+from llama_index.llms.openai import OpenAI
+from llama_index.readers.file import PandasCSVReader
 
-# Configure the Streamlit page
-st.set_page_config(page_title="Spotify Review Q&A Chatbot", layout="wide")
+openai.api_key = st.secrets["secrets"]["openai_key"]
+st.header("Chat with the Streamlit docs 💬 📚")
 
-# Set up your OpenAI API key (make sure it's in your Streamlit secrets or environment)
-openai.api_key = st.secrets.get("openai_key", "YOUR_OPENAI_API_KEY")
-
-# Initialize chat history
-if "messages" not in st.session_state:
+if "messages" not in st.session_state.keys():  # Initialize the chat message history
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hi! Ask me any question about our music streaming app based on user reviews."}
+        {"role": "assistant", "content": "Ask me a question about Spotify reviews!"}
     ]
 
 
-@st.cache_resource(show_spinner=True)
-def load_index():
-    with st.spinner("Loading and indexing review data..."):
-        # Load documents from the review dataset directory (adjust path as needed)
-        csv_path = "./data/reviews.csv"
-        df = pd.read_csv(csv_path)
+system_prompt = """You are a summary agent to answer users questions on Spotify reviews.
 
-        docs = [Document(text=row["review_text"])
-                for index, row in df.iterrows()]
+Follow these rules in order to answer the user's question:
+1) Your answer should be short (maximum 3 short coherent sentences).
+2) Use the contextual information on Google Store reviews for Spotify to extract actionable insights.
+3) Your answer should be a coherent question answering the question with the given context.
+4) Keep your answers technical and based on facts do not hallucinate features.
+5) If the question is not clear, ask for clarification.
+6) If the question is out of scope, politely decline.
 
-        # Create a service context using an OpenAI LLM
-        service_context = ServiceContext.from_defaults(
-            llm=OpenAI(
-                model="gpt-4o-mini",
-                temperature=0.5,
-                system_prompt="You are an expert on our music streaming application. Answer queries based solely on user review insights."
-            )
-        )
-        # Build a vector index from the documents for efficient retrieval
-        index = VectorStoreIndex.from_documents(
-            docs, service_context=service_context)
+"""
+
+
+cache_file = "open_ai_embeddings_cache.pkl"
+
+
+@st.cache_resource(show_spinner=False)
+def load_data():
+    with st.spinner(text="Loading and indexing the docs! This should take 3-4 minutes."):
+        parser = PandasCSVReader(concat_rows=False, pandas_config={
+            "usecols": ["review_text"], "nrows": 10000})
+        docs = parser.load_data("data/spotify_reviews_dedup.csv")
+        print("Loaded Data")
+        llm = OpenAI(model="gpt-4o-mini", temperature=0.5,
+                     system_prompt=system_prompt)
+        Settings.llm = llm
+        print("Readied LLM")
+        index = VectorStoreIndex.from_documents(docs)
+        print("Generated index")
         return index
 
 
-# Load (or cache) the review index
-index = load_index()
+index = load_data()
 
-# Initialize the chat engine if it hasn't been already set
-if "chat_engine" not in st.session_state:
-    st.session_state.chat_engine = index.as_chat_engine(
-        chat_mode="condense_question", verbose=True)
+chat_engine = index.as_chat_engine(chat_mode="condense_question", verbose=True)
 
-# Get user input using Streamlit's chat input widget
-prompt = st.chat_input("Your question:")
-
-if prompt:
-    # Append the user's question to the conversation history
+# Prompt for user input and save to chat history
+if prompt := st.chat_input("Your question"):
+    print(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("assistant"):
-        with st.spinner("Generating answer..."):
-            # Pass the prompt to the chat engine to generate a response
-            response = st.session_state.chat_engine.chat(prompt)
-            st.write(response.response)
-            # Save the assistant's response in the session state
-            st.session_state.messages.append(
-                {"role": "assistant", "content": response.response})
 
-# Display the conversation history
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
+for message in st.session_state.messages:  # Display the prior chat messages
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
+
+# If last message is not from assistant, generate a new response
+if st.session_state.messages[-1]["role"] != "assistant":
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            response = chat_engine.chat(prompt)
+            st.write(response.response)
+            message = {"role": "assistant", "content": response.response}
+            # Add response to message history
+            st.session_state.messages.append(message)
+            st.session_state.messages.append(message)
