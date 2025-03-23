@@ -4,6 +4,8 @@ This is the implementation of an AI-powered Q&A chatbot designed to extract acti
 ### Overview
 The project aims to address the "management's" need for a more efficient solution to analyze and interpret unstructured user reviews. The chatbot utilises natural language processing techniques to provide insightful responses to various management queries about user preferences, comparisons with competitors, reasons for dissatisfaction, and emerging trends etc.
 
+![Example query on Streamlit UI](/Readme_images/UI%20example.png)
+
 ### Project Architecture
 
 - **Data Ingestion:**  

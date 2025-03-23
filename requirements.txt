@@ -20,4 +20,4 @@ symspellpy
 nltk
 bitsandbytes
 accelerate
-
+llama-index-vector-stores-faiss
