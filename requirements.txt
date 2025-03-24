@@ -21,3 +21,7 @@ nltk
 bitsandbytes
 accelerate
 llama-index-vector-stores-faiss
+cudf-12
+numexpr
+bottleneck
+bert_score
