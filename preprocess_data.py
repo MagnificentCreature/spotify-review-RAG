@@ -111,4 +111,4 @@ sample_size = 500000  # Number of rows to randomly pick
 
 # Randomly sample X rows
 df_sampled = df.sample(n=sample_size, random_state=42)
-df.to_csv("../Data/SPOTIFY_REVIEWS_DEDUP.csv", index=False)
+df.to_csv("../data/SPOTIFY_REVIEWS_DEDUP.csv", index=False)
