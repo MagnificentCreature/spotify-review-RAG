@@ -26,6 +26,11 @@ def preprocess_text(df):
     return df
 
 
+def sort_by_recent(df):
+    df.sort_values(by=['review_timestamp'], ascending=False)
+    return df
+
+
 def vectorized_deduplicate_dataframe(df, text_column="review_text", threshold=0.8):
     """
     Efficiently deduplicates a dataframe based on text similarity using TF-IDF and cosine similarity on GPU using RAPIDS cuML.
@@ -87,9 +92,11 @@ print(device)
 
 
 # Load documents from the review dataset directory (adjust path as needed)
-csv_path = "Data/SPOTIFY_REVIEWS.csv"
+# csv_path = "Data/SPOTIFY_REVIEWS.csv"
+csv_path = "data/SPOTIFY_REVIEWS.csv"
+
 df = pd.read_csv(csv_path, usecols=[
-                 "review_text", "review_rating", "review_likes"])
+                 "review_text", "review_rating", "review_likes", "review_timestamp"])
 
 # remove rows with review text less than 8 tokens
 df = remove_short_lines(df)
@@ -99,4 +106,9 @@ df = preprocess_text(df)
 # Assuming df is your DataFrame
 df = vectorized_deduplicate_dataframe(df)
 df = df.dropna(subset=["review_text"])
-df.to_csv("../Data/SPOTIFY_REVIEWS_DEDUP2.csv", index=False)
+# df = sort_by_recent(df)
+sample_size = 500000  # Number of rows to randomly pick
+
+# Randomly sample X rows
+df_sampled = df.sample(n=sample_size, random_state=42)
+df.to_csv("../Data/SPOTIFY_REVIEWS_DEDUP.csv", index=False)

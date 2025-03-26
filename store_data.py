@@ -9,68 +9,58 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.readers.file import PandasCSVReader
 from llama_index.vector_stores.faiss import FaissVectorStore
 
+
+def get_embedding_dim(embed_model):
+    return len(embed_model.get_text_embedding("test"))
+
+
 openai.api_key = st.secrets["secrets"]["openai_key"]
 
 
 embed_model = OpenAIEmbedding()
 
 FAISS_STORAGE_PATH = "./storage"
-DOCS_PATH = os.path.join("./storage", "default__vector_store.json")
+DATA_PATH = os.path.join(FAISS_STORAGE_PATH, "SPOTIFY_REVIEWS_DEDUP")
 
 
-@st.cache_resource(show_spinner=False)
-def load_data():
-    # Create FAISS index
+def store_data():
+    print("Loading Data")
+    parser = PandasCSVReader(concat_rows=False, pandas_config={
+        "usecols": ["review_text"]})
+    docs = parser.load_data(DATA_PATH)
+    print("Generating index")
 
-    if os.path.exists(FAISS_STORAGE_PATH) and os.path.exists(DOCS_PATH):
-        print("Loading Index from cache")
-        vector_store = FaissVectorStore.from_persist_dir("./storage")
-        storage_context = StorageContext.from_defaults(
-            vector_store=vector_store, persist_dir=FAISS_STORAGE_PATH)
-        index = load_index_from_storage(storage_context=storage_context)
-        return index
+    # Adjust based on embedding dimensions
+    co = faiss.GpuMultipleClonerOptions()
+    co.shard = False
+    res = faiss.StandardGpuResources()  # Create a single GPU resource
+    faiss_index = faiss.IndexFlatL2(1536)
+    gpu_index = faiss.index_cpu_to_all_gpus(faiss_index, co)
 
-    with st.spinner(text="Loading and indexing the docs! This should take 3-4 minutes."):
-        print("Loading Data")
-        parser = PandasCSVReader(concat_rows=False, pandas_config={
-            "usecols": ["review_text"], "nrows": 10000})
-        docs = parser.load_data("data/spotify_reviews_dedup.csv")
-        print("Generating index")
+    # res = [faiss.StandardGpuResources() for _ in range(num_gpus)]  # Multi-GPU resources
+    # gpu_index = faiss.index_cpu_to_gpu_multiple(res, list(range(num_gpus)), faiss_index)
 
-        num_gpus = faiss.get_num_gpus()
+    vector_store = FaissVectorStore(gpu_index)
+    storage_context = StorageContext.from_defaults(
+        vector_store=vector_store)
+    index = VectorStoreIndex.from_documents(
+        docs, storage_context=storage_context)
 
-        # Adjust based on embedding dimensions
-        co = faiss.GpuMultipleClonerOptions()
-        co.shard = False
-        # res = faiss.StandardGpuResources()  # Create a single GPU resource
-        faiss_index = faiss.IndexFlatL2(1536)
-        gpu_index = faiss.index_cpu_to_all_gpus(faiss_index, co)
+    print("Saving index")
+    # save index to disk
+    # index.storage_context.persist()
 
-        # res = [faiss.StandardGpuResources() for _ in range(num_gpus)]  # Multi-GPU resources
-        # gpu_index = faiss.index_cpu_to_gpu_multiple(res, list(range(num_gpus)), faiss_index)
+    if not os.path.exists(FAISS_STORAGE_PATH):
+        os.makedirs(FAISS_STORAGE_PATH)
+        print(f"Created directory: {FAISS_STORAGE_PATH}")
 
-        vector_store = FaissVectorStore(gpu_index)
-        storage_context = StorageContext.from_defaults(
-            vector_store=vector_store)
-        index = VectorStoreIndex.from_documents(
-            docs, storage_context=storage_context, show_progress=True)
+    # Convert back to CPU before saving
+    cpu_index = faiss.index_gpu_to_cpu(gpu_index)
+    faiss.write_index(cpu_index, f"{FAISS_STORAGE_PATH}/faiss_index.bin")
+    # faiss.write_index(cpu_index, FAISS_INDEX_PATH)  # Save FAISS index separately
+    storage_context.persist(persist_dir=FAISS_STORAGE_PATH)
 
-        print("Saving index")
-        # save index to disk
-        # index.storage_context.persist()
-
-        if not os.path.exists(FAISS_STORAGE_PATH):
-            os.makedirs(FAISS_STORAGE_PATH)
-            print(f"Created directory: {FAISS_STORAGE_PATH}")
-
-        # Convert back to CPU before saving
-        cpu_index = faiss.index_gpu_to_cpu(gpu_index)
-        faiss.write_index(cpu_index, f"{FAISS_STORAGE_PATH}/faiss_index.bin")
-
-        # faiss.write_index(cpu_index, FAISS_INDEX_PATH)  # Save FAISS index separately
-        index.storage_context.persist(persist_dir=FAISS_STORAGE_PATH)
-
-        return index
+    return index
 
 
-index = load_data()
+index = store_data()

@@ -25,3 +25,4 @@ cudf-12
 numexpr
 bottleneck
 bert_score
+rouge
