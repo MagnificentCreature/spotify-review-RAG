@@ -13,7 +13,7 @@ def evaluate_bertscore(generated_text, reference_text):
     return F1.item()
 
 
-# Example
+# # Example
 gen_text = "The quick brown fox jumps over the lazy dog."
 ref_text = "A fast brown fox leaps over a sleepy canine."
 
@@ -21,7 +21,7 @@ print(evaluate_rouge(gen_text, ref_text))
 print(evaluate_bertscore(gen_text, ref_text))
 
 
-# Example
+# # Example
 gen_text = "This app is amazing and works smoothly."
 ref_text = "Amazing app with smooth performance."
 

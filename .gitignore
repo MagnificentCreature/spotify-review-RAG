@@ -6,3 +6,4 @@ open_ai_embeddings_cache.pkl
 /data/SPOTIFY_REVIEWS.csv
 /storage_old
 /storage
+/data/SPOTIFY_REVIEWS_DEDUP.csv

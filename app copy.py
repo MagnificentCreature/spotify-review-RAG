@@ -85,12 +85,19 @@ curated_prompts = [
 if "has_user_input" not in st.session_state:
     st.session_state.has_user_input = False
 
+if "user_input" not in st.session_state:
+    st.session_state["user_input"] = None
+
 # if user_input := st.chat_input("Your question"):
 #     st.session_state.has_user_input = True
 #     st.session_state.messages.append({"role": "user", "content": user_input})
 
+# Case for curated prompt response
+if st.session_state["user_input"]:
+    user_input = st.session_state["user_input"]
+    st.session_state["user_input"] = None  # Clear after use
 # Prompt for user input and save to chat history
-if user_input := st.chat_input("Your question"):
+elif user_input := st.chat_input("Your question"):
     st.session_state.has_user_input = True
     st.session_state.messages.append({"role": "user", "content": user_input})
 
@@ -101,8 +108,8 @@ for message in st.session_state.messages:  # Display the prior chat messages
 
 def handle_prompt_selection(prompt):
     st.session_state.has_user_input = True
+    st.session_state["user_input"] = prompt
     st.session_state.messages.append({"role": "user", "content": prompt})
-    return prompt
 
 
 # Display curated prompts as buttons
@@ -116,10 +123,9 @@ if st.session_state.has_user_input == False:
 if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            query = st.session_state.messages[-1]["content"]
-            response = chat_engine.query(query)
-            response.response += f"\n\n BERT score {evaluate_bertscore(response.response, query)}"
-            print(query)
+            response = chat_engine.query(user_input)
+            response.response += f"\n\n BERT score {evaluate_bertscore(response.response, user_input)}"
+            print(user_input)
             st.write(response.response)
             message = {"role": "assistant", "content": response.response}
             # Add response to message history

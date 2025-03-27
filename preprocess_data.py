@@ -1,3 +1,5 @@
+import os
+
 import cudf
 import cupy as cp  # GPU-accelerated NumPy
 import cupyx.scipy.sparse as cpx  # Sparse CuPy operations
@@ -7,6 +9,8 @@ from cuml.feature_extraction.text import TfidfVectorizer as cuTfidfVectorizer
 from cuml.metrics.pairwise_distances import pairwise_distances
 from cuml.neighbors import NearestNeighbors  # RAPIDS GPU-optimized ANN
 from tqdm import tqdm
+
+DATA_PATH = "data"
 
 
 def remove_short_lines(df, length=8):
@@ -93,7 +97,7 @@ print(device)
 
 # Load documents from the review dataset directory (adjust path as needed)
 # csv_path = "Data/SPOTIFY_REVIEWS.csv"
-csv_path = "data/SPOTIFY_REVIEWS.csv"
+csv_path = os.path.join(DATA_PATH, "SPOTIFY_REVIEWS.csv")
 
 df = pd.read_csv(csv_path, usecols=[
                  "review_text", "review_rating", "review_likes", "review_timestamp"])
@@ -111,4 +115,5 @@ sample_size = 500000  # Number of rows to randomly pick
 
 # Randomly sample X rows
 df_sampled = df.sample(n=sample_size, random_state=42)
-df.to_csv("../data/SPOTIFY_REVIEWS_DEDUP.csv", index=False)
+new_csv_path = os.path.join(DATA_PATH, "SPOTIFY_REVIEWS_DEDUP.csv")
+df.to_csv(new_csv_path, index=False)

@@ -20,7 +20,7 @@ openai.api_key = st.secrets["secrets"]["openai_key"]
 embed_model = OpenAIEmbedding()
 
 FAISS_STORAGE_PATH = "./storage"
-DATA_PATH = os.path.join(FAISS_STORAGE_PATH, "SPOTIFY_REVIEWS_DEDUP")
+DATA_PATH = os.path.join(FAISS_STORAGE_PATH, "SAMPLE_SPOTIFY_REVIEWS_DEDUP")
 
 
 def store_data():
